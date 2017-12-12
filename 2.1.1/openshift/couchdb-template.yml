@@ -1,0 +1,114 @@
+---
+apiVersion: v1
+kind: Template
+labels:
+  template: couchdb
+message: 'An ephemeral instance of Apache couchdb is deployed with this template.'
+metadata:
+  annotations:
+    description: Database template for Apache Couchdb
+    openshift.io/display-name: Apache Couchdb 2.1.1 (Ephemeral)
+    tags: database
+    version: 2.1.1
+  name: couchdb
+objects:
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: ${APPLICATION_NAME}
+    labels:
+      application: ${APPLICATION_NAME}
+  spec:
+    ports:
+    - name: http
+      port: 5984
+      protocol: TCP
+      targetPort: 5984
+    selector:
+      name: ${APPLICATION_NAME}
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      application: ${APPLICATION_NAME}
+      component: database
+    name: ${APPLICATION_NAME}
+  spec:
+    replicas: 1
+    revisionHistoryLimit: 2
+    selector:
+      name: ${APPLICATION_NAME}
+    strategy:
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          name: ${APPLICATION_NAME}
+      spec:
+        containers:
+        - env:
+          - name: COUCHDB_USER
+            value: ${COUCHDB_USER}
+          - name: COUCHDB_PASSWORD
+            value: ${COUCHDB_PASSWORD}
+          - name: COUCHDB_HTTP_PORT
+            value: ${COUCHDB_HTTP_PORT}
+          - name: COUCHDB_HTTP_BIND_ADDRESS
+            value: ${COUCHDB_HTTP_BIND_ADDRESS}
+          image: openshift3/couchdb:latest
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 2
+            httpGet:
+              path: /
+              port: 5984
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 2
+          name: couchdb
+          ports:
+          - containerPort: 5984
+            name: http
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 2
+            httpGet:
+              path: /
+              port: 5984
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 2
+          securityContext:
+            privileged: false
+    triggers:
+    - type: ConfigChange
+parameters:
+- description: Application name
+  displayName: Application Name
+  name: APPLICATION_NAME
+  required: true
+  value: couchdb
+- description: Administrator username
+  displayName: Admin Username
+  name: COUCHDB_USER
+  required: true
+  value: admin
+- description: Administrator password
+  displayName: Admin Password
+  name: COUCHDB_PASSWORD
+  required: true
+  value: redhat123
+- description: HTTP port for couchdb listener
+  displayName: HTTP Port
+  name: COUCHDB_HTTP_PORT
+  required: true
+  value: "5984"
+- description: HTTP bind address
+  displayName: HTTP Bind Address
+  name: COUCHDB_HTTP_BIND_ADDRESS
+  required: true
+  value: "0.0.0.0"
