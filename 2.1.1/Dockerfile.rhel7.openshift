@@ -33,8 +33,13 @@ COPY ./docker-entrypoint-rhel7.sh /opt/couchdb/
 
 VOLUME ["/var/lib/couchdb"]
 
+RUN chgrp -R 0 /opt/couchdb && \
+    chmod -R g=u /opt/couchdb
+
 EXPOSE 5984
 WORKDIR /opt/couchdb
+
+
 
 ENTRYPOINT ["/opt/couchdb/docker-entrypoint-rhel7.sh"]
 CMD ["couchdb"]
